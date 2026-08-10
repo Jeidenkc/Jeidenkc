@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@agentrouter/agentrouter": "^0.1.12",
     "@supabase/supabase-js": "^2.0.0",
     "lightweight-charts": "^5.0.0",
     "next": "^16.2.12",
