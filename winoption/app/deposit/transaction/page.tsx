@@ -1,10 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
+import type { FormEvent } from "react";
 import { supabase } from "@/lib/supabase";
 
-export default function TransactionPage() {
+function TransactionPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -14,6 +18,8 @@ export default function TransactionPage() {
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
   const [message, setMessage] = useState("");
+  const [depositAmount, setDepositAmount] = useState<number | null>(null);
+  const [depositNetwork, setDepositNetwork] = useState("");
 
   useEffect(() => {
     async function checkDeposit() {
@@ -35,17 +41,23 @@ export default function TransactionPage() {
 
       const { data, error } = await supabase
         .from("deposits")
-        .select("id, user_id, amount, network, status, transaction_hash")
+        .select(
+          "id, user_id, amount, network, status, transaction_hash"
+        )
         .eq("id", depositId)
         .eq("user_id", user.id)
         .single();
 
       if (error || !data) {
         console.error("DEPOSIT CHECK ERROR:", error);
+
         setMessage("Deposit request not found.");
         setChecking(false);
         return;
       }
+
+      setDepositAmount(data.amount);
+      setDepositNetwork(data.network || "");
 
       if (data.transaction_hash) {
         setTransactionHash(data.transaction_hash);
@@ -57,9 +69,7 @@ export default function TransactionPage() {
     checkDeposit();
   }, [depositId, router]);
 
-  async function handleSubmit(
-    e: React.FormEvent<HTMLFormElement>
-  ) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     setMessage("");
@@ -103,7 +113,11 @@ export default function TransactionPage() {
 
       if (error) {
         console.error("TRANSACTION UPDATE ERROR:", error);
-        setMessage(error.message);
+
+        setMessage(
+          error.message || "Failed to submit transaction."
+        );
+
         setLoading(false);
         return;
       }
@@ -112,6 +126,7 @@ export default function TransactionPage() {
         setMessage(
           "Transaction could not be submitted. Please try again."
         );
+
         setLoading(false);
         return;
       }
@@ -127,8 +142,7 @@ export default function TransactionPage() {
       console.error("TRANSACTION ERROR:", error);
 
       setMessage(
-        error?.message ||
-          "An unexpected error occurred."
+        error?.message || "An unexpected error occurred."
       );
 
       setLoading(false);
@@ -148,21 +162,20 @@ export default function TransactionPage() {
   return (
     <main className="min-h-screen bg-slate-900 text-white px-4 py-8">
       <div className="max-w-lg mx-auto">
-
         <div className="bg-slate-800 rounded-2xl shadow-xl p-6">
 
           <h1 className="text-3xl font-bold text-green-400 mb-6">
             Transaction Details
           </h1>
 
-          <div className="bg-blue-900/30 border border-blue-600 rounded-xl p-4 mb-6">
+          <div className="bg-blue-900/30 border border-blue-600 rounded-lg p-4 mb-6">
             <p className="font-bold text-blue-300 mb-2">
               Submit Transaction ID / Hash
             </p>
 
             <p className="text-sm text-blue-100">
-              After sending your USDT, paste the transaction
-              ID or transaction hash below.
+              After sending your USDT, paste the transaction ID
+              or transaction hash below.
             </p>
           </div>
 
@@ -176,11 +189,34 @@ export default function TransactionPage() {
             </p>
           </div>
 
+          {depositAmount !== null && (
+            <div className="bg-slate-900 rounded-lg p-4 mb-6">
+              <p className="text-sm text-slate-400">
+                Deposit Amount
+              </p>
+
+              <p className="text-lg font-semibold mt-1">
+                {depositAmount}
+              </p>
+            </div>
+          )}
+
+          {depositNetwork && (
+            <div className="bg-slate-900 rounded-lg p-4 mb-6">
+              <p className="text-sm text-slate-400">
+                Network
+              </p>
+
+              <p className="text-lg font-semibold mt-1">
+                {depositNetwork}
+              </p>
+            </div>
+          )}
+
           <form
             onSubmit={handleSubmit}
             className="space-y-5"
           >
-
             <div>
               <label className="block text-sm font-medium mb-2">
                 Transaction ID / Hash
@@ -191,28 +227,27 @@ export default function TransactionPage() {
                 onChange={(e) =>
                   setTransactionHash(e.target.value)
                 }
-                placeholder="Paste your transaction ID or hash here"
+                placeholder="Paste your transaction ID or hash"
                 rows={6}
                 required
                 disabled={loading}
-                className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 outline-none resize-none break-all"
+                className="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-green-500"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-green-500 hover:bg-green-600 p-4 rounded-lg font-bold text-lg disabled:opacity-50"
+              className="w-full bg-green-500 hover:bg-green-600 disabled:bg-green-800 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg"
             >
               {loading
                 ? "Submitting..."
                 : "Submit Transaction"}
             </button>
-
           </form>
 
           {message && (
-            <div className="mt-5 bg-slate-700 rounded-lg p-4 text-center">
+            <div className="mt-5 bg-slate-700 rounded-lg p-4 text-sm">
               {message}
             </div>
           )}
@@ -220,7 +255,7 @@ export default function TransactionPage() {
           <button
             type="button"
             onClick={() => router.push("/dashboard")}
-            className="w-full mt-4 bg-slate-700 hover:bg-slate-600 p-3 rounded-lg"
+            className="w-full mt-4 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-lg"
           >
             Return to Home
           </button>
@@ -228,5 +263,21 @@ export default function TransactionPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function TransactionPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-slate-900 text-white flex items-center justify-center">
+          <div className="bg-slate-800 rounded-xl p-8">
+            Loading transaction page...
+          </div>
+        </main>
+      }
+    >
+      <TransactionPageContent />
+    </Suspense>
   );
 }

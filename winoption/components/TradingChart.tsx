@@ -178,7 +178,7 @@ export default function TradingChart() {
         });
 
       if (markers.length > 0) {
-        createSeriesMarkers(candleSeries, markers);
+        createSeriesMarkers(candleSeries, markers as any);
       }
     }
 
