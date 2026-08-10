@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # agent-router
 
 Intelligent task routing for multi-agent systems. Route tasks to the right agent based on capabilities, cost, latency, success rates, and current load.
@@ -345,3 +346,17 @@ interface AgentCapability {
 ## License
 
 MIT
+=======
+- 👋 Hi, I’m @Jeidenkc
+- 👀 I’m interested in ...
+- 🌱 I’m currently learning ...
+- 💞️ I’m looking to collaborate on ...
+- 📫 How to reach me ...
+- 😄 Pronouns: ...
+- ⚡ Fun fact: ...
+
+<!---
+Jeidenkc/Jeidenkc is a ✨ special ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+You can click the Preview link to take a look at your changes.
+--->
+>>>>>>> origin/main
