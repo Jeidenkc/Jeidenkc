@@ -59,16 +59,14 @@ export default function RegisterPage() {
       /*
        * Create the new Supabase account.
        */
-      const {
-        data,
-        error,
-      } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             full_name: fullName,
           },
+          emailRedirectTo: `${window.location.origin}/login`,
         },
       });
 
@@ -92,10 +90,7 @@ export default function RegisterPage() {
        * a valid referral code was supplied.
        */
       if (referrerId && referrerId !== data.user.id) {
-        const {
-          data: referralData,
-          error: referralError,
-        } = await supabase
+        const { data: referralData, error: referralError } = await supabase
           .from("referrals")
           .insert([
             {
@@ -119,6 +114,17 @@ export default function RegisterPage() {
         }
       }
 
+      /*
+       * If Supabase did not return a session, email confirmation
+       * is required before the user can log in. Send them to the
+       * dedicated "check your email" page instead of showing an
+       * inline message.
+       */
+      if (!data.session) {
+        router.push("/register/success");
+        return;
+      }
+
       setMessage(
         referralCode.trim()
           ? "Registration successful. Referral recorded."
@@ -130,15 +136,15 @@ export default function RegisterPage() {
       }, 1500);
     } catch (err: any) {
       console.error("REGISTRATION ERROR:", err);
-      setMessage(err?.message || "An unexpected error occurred.");
+      setMessage(err?.message || "An unexpected error occurred");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main className="min-h-screen bg-slate-900 flex items-center justify-center px-4 text-white">
-      <div className="w-full max-w-md bg-slate-800 p-8 rounded-xl shadow-lg">
+    <main className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-slate-800 p-8 rounded-2xl shadow-lg">
 
         <h1 className="text-3xl font-bold text-green-400 text-center mb-6">
           Create Account
@@ -156,7 +162,7 @@ export default function RegisterPage() {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Full Name"
-              className="w-full p-3 rounded-lg bg-slate-700 outline-none"
+              className="w-full p-3 rounded-lg bg-slate-700 outline-none focus:ring-2 focus:ring-green-500"
               required
               disabled={loading}
             />
@@ -172,7 +178,7 @@ export default function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email"
-              className="w-full p-3 rounded-lg bg-slate-700 outline-none"
+              className="w-full p-3 rounded-lg bg-slate-700 outline-none focus:ring-2 focus:ring-green-500"
               required
               disabled={loading}
             />
@@ -188,7 +194,7 @@ export default function RegisterPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
-              className="w-full p-3 rounded-lg bg-slate-700 outline-none"
+              className="w-full p-3 rounded-lg bg-slate-700 outline-none focus:ring-2 focus:ring-green-500"
               required
               minLength={6}
               disabled={loading}
@@ -205,7 +211,7 @@ export default function RegisterPage() {
               value={referralCode}
               onChange={(e) => setReferralCode(e.target.value)}
               placeholder="Enter referral code (optional)"
-              className="w-full p-3 rounded-lg bg-slate-700 outline-none"
+              className="w-full p-3 rounded-lg bg-slate-700 outline-none focus:ring-2 focus:ring-green-500"
               disabled={loading}
             />
 
@@ -217,7 +223,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-green-500 hover:bg-green-600 p-3 rounded-lg font-bold disabled:opacity-50"
+            className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-lg disabled:opacity-50"
           >
             {loading ? "Creating Account..." : "Register"}
           </button>
@@ -225,7 +231,7 @@ export default function RegisterPage() {
         </form>
 
         {message && (
-          <div className="mt-5 p-3 rounded-lg bg-slate-700 text-center">
+          <div className="mt-5 p-3 rounded-lg bg-slate-700 text-sm text-center">
             {message}
           </div>
         )}
@@ -233,7 +239,7 @@ export default function RegisterPage() {
         <button
           type="button"
           onClick={() => router.push("/login")}
-          className="w-full mt-4 bg-slate-600 hover:bg-slate-500 p-3 rounded-lg"
+          className="w-full mt-4 bg-slate-600 hover:bg-slate-500 text-white font-medium py-3 rounded-lg"
         >
           Already have an account? Login
         </button>
