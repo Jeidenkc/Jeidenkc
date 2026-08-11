@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       message:
-        result.completionText ??
+        (result as any).completionText ??
         "I could not generate a response right now.",
     });
   } catch (error) {
