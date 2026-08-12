@@ -36,6 +36,13 @@ type Profile = {
   balance?: number | null;
 };
 
+type SignalSubscription = {
+  id: string;
+  status?: string | null;
+  expires_at?: string | null;
+  created_at?: string | null;
+};
+
 export default function DashboardPage() {
   const router = useRouter();
 
@@ -43,6 +50,7 @@ export default function DashboardPage() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [deposits, setDeposits] = useState<Deposit[]>([]);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
+  const [subscription, setSubscription] = useState<SignalSubscription | null>(null);
 
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
@@ -135,6 +143,23 @@ export default function DashboardPage() {
         setWithdrawals([]);
       } else {
         setWithdrawals((withdrawalData as Withdrawal[]) || []);
+      }
+      const {
+        data: subscriptionData,
+        error: subscriptionError,
+      } = await supabase
+        .from("signal_subscriptions")
+        .select("id,status,expires_at,created_at")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (subscriptionError) {
+        console.error("Signal subscription error:", subscriptionError);
+        setSubscription(null);
+      } else {
+        setSubscription(subscriptionData);
       }
     } catch (error) {
       console.error("Dashboard loading error:", error);
@@ -559,6 +584,17 @@ export default function DashboardPage() {
           >
             Signals Bot
           </button>
+
+          <button
+            type="button"
+            onClick={() => router.push("/referrals")}
+            style={{
+              ...actionButtonStyle,
+              background: "#db2777",
+            }}
+          >
+            Referrals
+          </button>
         </section>
 
         <section
@@ -781,7 +817,63 @@ export default function DashboardPage() {
           )}
         </section>
 
-        {/* DEPOSIT HISTORY */}
+        {/* SIGNALS BOT SUBSCRIPTION */}
+      <section
+        style={{
+          background: "#ffffff",
+          borderRadius: "14px",
+          padding: "20px",
+          marginBottom: "16px",
+          boxShadow: "0 3px 12px rgba(0,0,0,0.05)",
+        }}
+      >
+        <div style={{ marginBottom: "14px" }}>
+          <h2 style={{ margin: 0, fontSize: "20px" }}>
+            Signals Bot Subscription
+          </h2>
+          <p style={{ margin: "5px 0 0", color: "#6b7280", fontSize: "13px" }}>
+            Your current Signals Bot subscription status.
+          </p>
+        </div>
+
+        {!subscription ? (
+          <EmptyState text="No active subscription." />
+        ) : (
+          <div style={tableWrapperStyle}>
+            <table style={tableStyle}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Status</th>
+                  <th style={thStyle}>Expires</th>
+                  <th style={thStyle}>Subscribed On</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style={tdStyle}>
+                    <span
+                      style={{
+                        ...statusBadgeStyle,
+                        ...getStatusStyle(subscription.status),
+                      }}
+                    >
+                      {subscription.status || "Pending"}
+                    </span>
+                  </td>
+                  <td style={tdStyle}>
+                    {formatDate(subscription.expires_at)}
+                  </td>
+                  <td style={tdStyle}>
+                    {formatDate(subscription.created_at)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* DEPOSIT HISTORY */}
         <section
           style={{
             background: "#ffffff",
