@@ -32,6 +32,7 @@ export default function AdminGuard({
       .eq("id", session.user.id)
       .single();
 
+    if (error) { alert("ADMIN CHECK ERROR: " + JSON.stringify(error)); }
     if (error || !data?.is_admin) {
       router.replace("/dashboard");
       return;
